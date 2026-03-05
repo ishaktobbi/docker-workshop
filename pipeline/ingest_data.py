@@ -1,3 +1,4 @@
+import click
 import pandas as pd
 from sqlalchemy import create_engine
 from tqdm.auto import tqdm
@@ -28,22 +29,36 @@ parse_dates = [
 ]
 
 
-def run():
-
-    pg_user = 'root'
-    pg_pass = 'root'
-    pg_host = 'localhost'
-    pg_port = 5432
-    pg_db = 'ny_taxi'
-
-
-    year = 2021
-    month = 1
-
-    chunksize = 100_000
-
-    target_table = 'yellow_taxi_data'
-
+@click.command()
+@click.option("--pg-user", default="root", help="Postgres user")
+@click.option("--pg-pass", default="root", help="Postgres password")
+@click.option("--pg-host", default="localhost", help="Postgres host")
+@click.option("--pg-port", type=int, default=5432, help="Postgres port")
+@click.option("--pg-db", default="ny_taxi", help="Postgres database")
+@click.option("--year", type=int, default=2021, help="Data year")
+@click.option("--month", type=int, default=1, help="Data month (1-12)")
+@click.option(
+    "--chunksize",
+    type=int,
+    default=100_000,
+    help="Number of rows per chunk when reading the CSV",
+)
+@click.option(
+    "--target-table",
+    default="yellow_taxi_data",
+    help="Destination table name in Postgres",
+)
+def run(
+    pg_user: str,
+    pg_pass: str,
+    pg_host: str,
+    pg_port: int,
+    pg_db: str,
+    year: int,
+    month: int,
+    chunksize: int,
+    target_table: str,
+) -> None:
     first = True
 
     prefix = 'https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow'
@@ -69,13 +84,14 @@ def run():
                 if_exists='replace'
                 )
             first = False
-        else:
-            df_chunk.to_sql(
-                name=target_table, 
-                con=engine, 
-                if_exists='append'
-                )
-            
+        
+        df_chunk.to_sql(
+            name=target_table, 
+            con=engine, 
+            if_exists='append'
+            )
+
+
 if __name__ == '__main__':
     run()
 
